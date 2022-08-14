@@ -1,0 +1,62 @@
+version: '3.7'
+services:
+  client:
+    image: nonovium/cloudify:1.0.1
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000
+    networks:
+      - mern-network
+    volumes:
+      - ./client/src:/usr/app/src
+      - ./client/public:/usr/app/public
+    depends_on:
+      - server
+      - mongodb_container
+    environment:
+      - REACT_APP_SERVER=http://localhost:4000
+      - REACT_APP_PROD_URL=http://localhost:4000
+      - CHOKIDAR_USEPOLLING=true
+    command: npm start
+    stdin_open: true
+    tty: true
+  server:
+    image: nonovium/cloudify:1.0.1
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - 4000:4000
+    networks:
+      - mern-network
+    volumes:
+      - ./server:/usr/app
+    depends_on:
+      - mongodb_container
+    environment:
+      # - DB_URI=mongodb://root:rootpassword@mongodb_container:27017/musicdb
+      - CLIENT=http://localhost:3000
+      - PORT=4000
+      - SECRET=YouShouldReallyChangeThisToSomethingSecureIAmSureThisIsntSecureSoChangeItNowRightNow!
+    #command: /usr/app/node_modules/.bin/nodemon -L /server.js
+
+  mongodb_container:
+    image: mongo:5.0.10
+    # environment:
+    #   MONGO_INITDB_ROOT_USERNAME: root
+    #   MONGO_INITDB_ROOT_PASSWORD: rootpassword
+    ports:
+      - 27017:27017
+    networks:
+      - mern-network
+    volumes:
+      - ./mongodb/mongodb_data_container:/data/musicdb
+
+networks:
+  mern-network:
+    driver: bridge
+
+volumes:
+  mongodb_data_container:
